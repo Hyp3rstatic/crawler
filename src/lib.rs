@@ -1,11 +1,19 @@
 use reqwest::Client;
+use reqwest::Response;
 use regex::Regex;
 use std::collections::HashMap;
 
 pub async fn getlinks(urltocrawl: &str, webqueue: HashMap<String, i32>) -> Result<HashMap<String, i32>, Box<dyn std::error::Error>> {
     let mut webclient = Client::new();
     
-    let mut webrequest = webclient.get(urltocrawl).send().await?;
+    //let mut webrequest = webclient.get(urltocrawl).send().await?;
+
+    let mut webrequest: Response;
+
+    match(webclient.get(urltocrawl).send().await){
+        Ok(validreq) => webrequest = validreq,
+        Err(_) => {println!{"Error on Get Request"}; return Ok(webqueue)},
+    }
 
     let relink = Regex::new("<a[^>]+href=\"(.*?)\"[^>]*>.*?</a>").unwrap();
 

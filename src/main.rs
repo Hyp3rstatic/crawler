@@ -7,13 +7,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>>{
 
     let mut webqueue: HashMap<String, i32> = HashMap::new();
 
-    let seed = "https://google.com/";
+    let seed = "https://waapple.org/varieties/all/";
 
     webqueue.insert(seed.to_string(), 0);
 
     webqueue = getlinks(seed, webqueue).await?;
 
-    for i in 0..1 {
+    for i in 0..1000 {
 
         println!("#{} Collecting Links", i);
 

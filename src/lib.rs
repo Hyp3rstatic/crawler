@@ -49,10 +49,10 @@ pub async fn getlinks(urltocrawl: &str, webqueue: HashMap<String, i32>) -> Resul
 
 fn sortlinkpartition (links: (&mut Vec<String>, &mut Vec<i32>), low: isize, high: isize) -> isize {
 
-    let mut index: isize = (low - 1);
+    let mut index: isize = low - 1;
 
-    let mut linkurls: &mut Vec<String> = links.0;
-    let mut linkrefs: &mut Vec<i32> = links.1;
+    let linkurls: &mut Vec<String> = links.0;
+    let linkrefs: &mut Vec<i32> = links.1;
     let x = linkrefs[high as usize];
 
     for j in low..high {
@@ -64,10 +64,10 @@ fn sortlinkpartition (links: (&mut Vec<String>, &mut Vec<i32>), low: isize, high
         }
     }
 
-    linkrefs.swap((index+1) as usize, (high as usize));
-    linkurls.swap((index+1) as usize, (high as usize));
+    linkrefs.swap((index+1) as usize, high as usize);
+    linkurls.swap((index+1) as usize, high as usize);
 
-    return (index+1);
+    return index+1;
 
 }
 
@@ -76,7 +76,7 @@ pub async fn sortlink (links: HashMap<String, i32>, mut low: isize, mut high: is
     let mut linkurls: Vec<String> = links.keys().cloned().collect();
     let mut linkrefs: Vec<i32> = links.values().cloned().collect();
 
-    let mut size = high-low + 1;
+    let size = high-low + 1;
     let mut stackrefs = vec![0; size as usize]; //+1?
 
     let mut top: isize = -1;
@@ -94,13 +94,13 @@ pub async fn sortlink (links: HashMap<String, i32>, mut low: isize, mut high: is
         //println!("top {}", top);
         top = top-1;
 
-        let mut partition = sortlinkpartition((&mut linkurls, &mut linkrefs), low, high);
+        let partition = sortlinkpartition((&mut linkurls, &mut linkrefs), low, high);
 
         if ( partition-1 ) > low{
             top = top + 1;
             stackrefs[top as usize] = low;
             top = top + 1;
-            stackrefs[(top as usize)] = (partition -1);
+            stackrefs[top as usize] = partition -1;
         }
         
         if ( partition + 1) < high {

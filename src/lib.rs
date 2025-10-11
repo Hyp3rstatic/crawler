@@ -4,38 +4,34 @@ use regex::Regex;
 use std::collections::HashMap;
 
 pub async fn getlinks(urltocrawl: &str, webqueue: HashMap<String, i32>) -> Result<HashMap<String, i32>, Box<dyn std::error::Error>> {
-    let mut webclient = Client::new();
+    let webclient = Client::new();
     
-    //let mut webrequest = webclient.get(urltocrawl).send().await?;
+    let webrequest: Response;
 
-    let mut webrequest: Response;
-
-    match(webclient.get(urltocrawl).send().await){
+    match webclient.get(urltocrawl).send().await {
         Ok(validreq) => webrequest = validreq,
-        Err(_) => {println!{"Error on Get Request"}; return Ok(webqueue)},
+        Err(_) => {
+            println!{"Error on Get Request"};
+            return Ok(webqueue)
+        },
     }
 
     let relink = Regex::new("<a[^>]+href=\"(.*?)\"[^>]*>.*?</a>").unwrap();
 
-    let mut urllist: HashMap<String, i32> = HashMap::new();
+    let mut urllist: HashMap<String, i32>;
     urllist = webqueue.clone();
 
     if webrequest.status().is_success() {
         let webhtml = webrequest.text().await?;
-        let weblinks: Vec<&str> = webhtml.matches("href").collect();
 
-        //println!("{:?}", weblinks);
         for hrefbracket in relink.find_iter(&webhtml) {
-            //println!("Found: {}", hrefbracket.as_str());
-            let mut href: String = hrefbracket.as_str().chars().filter(|c| !c.is_whitespace()).collect();
+
+            let href: String = hrefbracket.as_str().chars().filter(|c| !c.is_whitespace()).collect();
 
             let rehttp = Regex::new("\"(?:http.*?)\"").unwrap();
 
-            //let link = rehttp.find(&href);
-            
             for link in rehttp.find_iter(&href) {
                 let url = &link.as_str()[1.. link.as_str().len()-1];
-                //println!("{}", text);
                 if !urllist.contains_key(&url.to_string()) {
                     urllist.insert(url.to_string(), 1);
                 }
@@ -45,9 +41,78 @@ pub async fn getlinks(urltocrawl: &str, webqueue: HashMap<String, i32>) -> Resul
                     urllist.insert(url.to_string(), refstolink);
                 }
             }
-            
         }
     }
-        
+
     Ok(urllist)
+}
+
+fn sortlinkpartition (links: (&mut Vec<String>, &mut Vec<i32>), low: isize, high: isize) -> isize {
+
+    let mut index: isize = (low - 1);
+
+    let mut linkurls: &mut Vec<String> = links.0;
+    let mut linkrefs: &mut Vec<i32> = links.1;
+    let x = linkrefs[high as usize];
+
+    for j in low..high {
+        if (linkrefs[j as usize] as isize) <= (x as isize) {
+            index += 1;
+            //swap(linkurls[index], linkurls[j]);
+            linkrefs.swap(index as usize, j as usize);
+            linkurls.swap(index as usize, j as usize);
+        }
+    }
+
+    linkrefs.swap((index+1) as usize, (high as usize));
+    linkurls.swap((index+1) as usize, (high as usize));
+
+    return (index+1);
+
+}
+
+pub async fn sortlink (links: HashMap<String, i32>, mut low: isize, mut high: isize) -> (Vec<String>, Vec<i32>) {//(Vec<String>, Vec<i32>) {
+
+    let mut linkurls: Vec<String> = links.keys().cloned().collect();
+    let mut linkrefs: Vec<i32> = links.values().cloned().collect();
+
+    let mut size = high-low + 1;
+    let mut stackrefs = vec![0; size as usize]; //+1?
+
+    let mut top: isize = -1;
+
+    top = top + 1;
+    stackrefs[top as usize] = low;
+    top = top + 1;
+    stackrefs[top as usize] = high;
+
+    while top >= 0 {
+
+        high = stackrefs[top as usize];
+        top = top-1;
+        low = stackrefs[top as usize];
+        //println!("top {}", top);
+        top = top-1;
+
+        let mut partition = sortlinkpartition((&mut linkurls, &mut linkrefs), low, high);
+
+        if ( partition-1 ) > low{
+            top = top + 1;
+            stackrefs[top as usize] = low;
+            top = top + 1;
+            stackrefs[(top as usize)] = (partition -1);
+        }
+        
+        if ( partition + 1) < high {
+            top = top + 1;
+            stackrefs[top as usize] = partition + 1;
+            top = top + 1;
+            stackrefs[top as usize] = high;
+        }
+
+    }
+
+    println!("{:?}", linkrefs);
+
+    return (linkurls, linkrefs);
 }

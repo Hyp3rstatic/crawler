@@ -36,12 +36,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>>{
 
     let reflist = sortlink(webqueue.clone(), 0, ((webqueue.len()-1) as isize)).await;
 
-    /*for value in reflist.iter() {
-        println!{"{}", value};
-    }*/
-
     println!("{:?}", reflist);
 
+    
     for i in 0..reflist.1.len() {
         println!("[{}]   {}", reflist.1[i], reflist.0[i]);
     }

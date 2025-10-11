@@ -112,7 +112,5 @@ pub async fn sortlink (links: HashMap<String, i32>, mut low: isize, mut high: is
 
     }
 
-    println!("{:?}", linkrefs);
-
     return (linkurls, linkrefs);
 }

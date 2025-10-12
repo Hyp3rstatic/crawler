@@ -5,15 +5,20 @@ use std::collections::HashMap;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>>{
 
+    //Stores links
     let mut webqueue: HashMap<String, i32> = HashMap::new();
 
-    let seed = "https://waapple.org/varieties/all/";
+    //starting link
+    let seed = "https://mnhardy.umn.edu/apples/varieties";
 
+    //add starting link to stored link with 0 references
     webqueue.insert(seed.to_string(), 0);
 
+    //collect links referenced on starting link
     webqueue = getlinks(seed, webqueue).await?;
 
-    for i in 0..1000 {
+    //loop for link gathering
+    for i in 0..100 {
 
         println!("#{} Collecting Links", i);
 

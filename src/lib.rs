@@ -4,10 +4,12 @@ use regex::Regex;
 use std::collections::HashMap;
 
 pub async fn getlinks(urltocrawl: &str, webqueue: HashMap<String, i32>) -> Result<HashMap<String, i32>, Box<dyn std::error::Error>> {
+    //create web client
     let webclient = Client::new();
     
     let webrequest: Response;
 
+    //proceed if request doesn't error; end search for this site on error
     match webclient.get(urltocrawl).send().await {
         Ok(validreq) => webrequest = validreq,
         Err(_) => {
@@ -16,26 +18,45 @@ pub async fn getlinks(urltocrawl: &str, webqueue: HashMap<String, i32>) -> Resul
         },
     }
 
+    //regex pattern for getting <a hrefs>
     let relink = Regex::new("<a[^>]+href=\"(.*?)\"[^>]*>.*?</a>").unwrap();
 
+    //current urls in use
     let mut urllist: HashMap<String, i32>;
+
+    //clone other links stored
     urllist = webqueue.clone();
 
+    //list of links on this site; used to prevent more than one increment on ref counts
+    let mut linksonsite: Vec<String> = vec![];
+
     if webrequest.status().is_success() {
+
         let webhtml = webrequest.text().await?;
 
+        //apply first regex pattern
         for hrefbracket in relink.find_iter(&webhtml) {
 
+            //filter out whitespace
             let href: String = hrefbracket.as_str().chars().filter(|c| !c.is_whitespace()).collect();
 
+            //regex pattern for http links
             let rehttp = Regex::new("\"(?:http.*?)\"").unwrap();
 
+            //apply second regex pattern
             for link in rehttp.find_iter(&href) {
                 let url = &link.as_str()[1.. link.as_str().len()-1];
+                //add link not found previously
                 if !urllist.contains_key(&url.to_string()) {
+                    //add to all links list
                     urllist.insert(url.to_string(), 1);
+
+                    //add to this site's list
+                    linksonsite.push(url.to_string());
                 }
-                else {
+                else if !linksonsite.contains(&url.to_string()) {
+                //increment link reference on repeat find *for the first instance on site
+                //no repeats on same site
                     let mut refstolink: i32 = *urllist.get(url).unwrap();
                     refstolink += 1;
                     urllist.insert(url.to_string(), refstolink);

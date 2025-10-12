@@ -18,7 +18,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>>{
     webqueue = getlinks(seed, webqueue).await?;
 
     //loop for link gathering
-    for i in 0..100 {
+    for i in 0..25 {
 
         println!("#{} Collecting Links", i);
 
@@ -31,18 +31,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>>{
         webqueue = getlinks(currentlink.as_str(), webqueue).await?;
     }
 
-    for link in &webqueue {
-        if *link.1 > 1 {
-            println!("{:?}", link);
-        }
-    }
-
-    println!("\n\n\n");
-
     let reflist = sortlink(webqueue.clone(), 0, (webqueue.len()-1) as isize).await;
-
-    println!("{:?}", reflist);
-
     
     for i in 0..reflist.1.len() {
         println!("[{}]   {}", reflist.1[i], reflist.0[i]);

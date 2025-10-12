@@ -112,7 +112,6 @@ pub async fn sortlink (links: HashMap<String, i32>, mut low: isize, mut high: is
         high = stackrefs[top as usize];
         top = top-1;
         low = stackrefs[top as usize];
-        //println!("top {}", top);
         top = top-1;
 
         let partition = sortlinkpartition((&mut linkurls, &mut linkrefs), low, high);
